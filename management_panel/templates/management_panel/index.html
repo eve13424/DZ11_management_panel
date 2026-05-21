@@ -1,0 +1,303 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Панель контроля управленческих действий</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 24px;
+            background: #f3f5f8;
+            color: #222;
+        }
+        h1, h2 {
+            color: #1f3c88;
+        }
+        .card {
+            background: #ffffff;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+        }
+        label {
+            font-weight: bold;
+            display: block;
+            margin-top: 10px;
+        }
+        input[type="text"], input[type="number"], select {
+            width: 100%;
+            padding: 8px;
+            margin-top: 6px;
+            border: 1px solid #bbb;
+            border-radius: 6px;
+            box-sizing: border-box;
+        }
+        button {
+            margin-top: 14px;
+            padding: 10px 16px;
+            border: none;
+            background: #1f3c88;
+            color: white;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 12px;
+        }
+        th, td {
+            border: 1px solid #ccc;
+            padding: 8px;
+            text-align: left;
+            vertical-align: top;
+        }
+        th {
+            background: #e8eefc;
+        }
+        .ok {
+            color: green;
+            font-weight: bold;
+        }
+        .bad {
+            color: red;
+            font-weight: bold;
+        }
+        .message {
+            padding: 10px;
+            border-radius: 6px;
+            margin-bottom: 10px;
+            background: #eef3ff;
+        }
+        img {
+            width: 100%;
+            max-width: 700px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background: white;
+            padding: 10px;
+        }
+        code {
+            background: #f0f0f0;
+            padding: 2px 5px;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <h1>Панель контроля управленческих действий</h1>
+    <p>
+        Веб-интерфейс контейнера безопасности для предотвращения потери управления
+        собственной инфраструктурой при переносе её в облако.
+    </p>
+</div>
+
+{% if messages %}
+<div class="card">
+    {% for message in messages %}
+        <div class="message">{{ message }}</div>
+    {% endfor %}
+</div>
+{% endif %}
+
+<div class="card">
+    <h2>Текущее состояние системы</h2>
+    <table>
+        <tr><th>Параметр</th><th>Значение</th></tr>
+        <tr><td>Сервис запущен</td><td>{{ system_status.service_running }}</td></tr>
+        <tr><td>Маршрутизация корректна</td><td>{{ system_status.routing_ok }}</td></tr>
+        <tr><td>Лимит CPU</td><td>{{ system_status.cpu_limit }}</td></tr>
+        <tr><td>Лимит памяти</td><td>{{ system_status.memory_limit }}</td></tr>
+        <tr><td>Самовосстановление</td><td>{{ system_status.self_healing }}</td></tr>
+        <tr><td>Критичный компонент работает</td><td>{{ system_status.critical_component_running }}</td></tr>
+        <tr>
+            <td>Доступность</td>
+            <td>
+                {% if system_status.available == 1 %}
+                    <span class="ok">Доступна</span>
+                {% else %}
+                    <span class="bad">Недоступна</span>
+                {% endif %}
+            </td>
+        </tr>
+    </table>
+</div>
+
+<div class="card">
+    <h2>Состояние защищенного доступа</h2>
+    <table>
+        <tr><th>Параметр</th><th>Значение</th></tr>
+        <tr><td>HTTPS включен</td><td>{{ system_status.https_enabled }}</td></tr>
+        <tr><td>Сертификат действителен</td><td>{{ system_status.certificate_valid }}</td></tr>
+        <tr><td>Перенаправление HTTP на HTTPS</td><td>{{ system_status.http_redirect_enabled }}</td></tr>
+        <tr><td>HSTS включен</td><td>{{ system_status.hsts_enabled }}</td></tr>
+        <tr><td>Небезопасный HTTP-доступ обнаружен</td><td>{{ system_status.insecure_http_detected }}</td></tr>
+        <tr><td>Итоговый статус защищенного доступа</td><td>{{ system_status.secure_access }}</td></tr>
+    </table>
+</div>
+
+<div class="card">
+    <h2>Новый управленческий запрос</h2>
+    <form method="post">
+        {% csrf_token %}
+
+        <label for="actor">Субъект управления</label>
+        <input type="text" name="actor" id="actor" placeholder="Введите ФИО или должность">
+
+        <label for="role">Роль</label>
+        <select name="role" id="role">
+            {% for role in roles %}
+                <option value="{{ role }}">{{ role }}</option>
+            {% endfor %}
+        </select>
+
+        <label for="action">Операция</label>
+        <select name="action" id="action">
+            {% for action in actions %}
+                <option value="{{ action }}">{{ action }}</option>
+            {% endfor %}
+        </select>
+
+        <label for="new_cpu">Новое значение CPU</label>
+        <input type="number" name="new_cpu" id="new_cpu" value="8">
+
+        <label for="new_memory">Новое значение памяти</label>
+        <input type="number" name="new_memory" id="new_memory" value="16">
+
+        <label for="new_route">Новый маршрут</label>
+        <select name="new_route" id="new_route">
+            {% for route in routes %}
+                <option value="{{ route }}">{{ route }}</option>
+            {% endfor %}
+        </select>
+
+        <label for="protocol">Протокол для проверки доступа</label>
+        <select name="protocol" id="protocol">
+            <option value="http">http</option>
+            <option value="https">https</option>
+        </select>
+
+        <label>
+            <input type="checkbox" name="certificate_valid">
+            Сертификат действителен
+        </label>
+
+        <label>
+            <input type="checkbox" name="simulate_failure">
+            Смоделировать отказ после перезапуска
+        </label>
+
+        <label>
+            <input type="checkbox" name="approved">
+            Второе подтверждение критического действия
+        </label>
+
+        <button type="submit">Отправить запрос</button>
+    </form>
+
+    <form method="post" action="{% url 'reset_demo' %}">
+        {% csrf_token %}
+        <button type="submit">Сбросить и заново выполнить демонстрационный сценарий</button>
+    </form>
+</div>
+
+<div class="card">
+    <h2>Журнал управленческих действий</h2>
+    <table>
+        <tr>
+            <th>ID</th>
+            <th>Время</th>
+            <th>Субъект</th>
+            <th>Роль</th>
+            <th>Операция</th>
+            <th>Решение</th>
+            <th>Причина</th>
+            <th>Восстановление</th>
+        </tr>
+        {% for row in audit_rows %}
+        <tr>
+            <td>{{ row.request_id }}</td>
+            <td>{{ row.time }}</td>
+            <td>{{ row.actor }}</td>
+            <td>{{ row.role }}</td>
+            <td>{{ row.action }}</td>
+            <td>{{ row.decision }}</td>
+            <td>{{ row.reason }}</td>
+            <td>{{ row.recovery }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+</div>
+
+<div class="card">
+    <h2>История доступности</h2>
+    <table>
+        <tr>
+            <th>Шаг</th>
+            <th>Доступность</th>
+            <th>Защищенный доступ</th>
+            <th>CPU</th>
+            <th>RAM</th>
+        </tr>
+        {% for row in history_rows %}
+        <tr>
+            <td>{{ row.step }}</td>
+            <td>{{ row.available }}</td>
+            <td>{{ row.secure_access }}</td>
+            <td>{{ row.cpu_limit }}</td>
+            <td>{{ row.memory_limit }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+</div>
+
+<div class="card">
+    <h2>Сводка решений</h2>
+    <table>
+        <tr><th>Решение</th><th>Количество</th></tr>
+        {% for row in summary_rows %}
+        <tr>
+            <td>{{ row.decision }}</td>
+            <td>{{ row.count }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+</div>
+
+<div class="card">
+    <h2>Метрики качества программного средства</h2>
+    <p>
+        В данном блоке отображаются измеримые показатели качества программного средства,
+        которые могут использоваться системой мониторинга Prometheus.
+    </p>
+    <table>
+        <tr><th>Метрика</th><th>Значение</th></tr>
+        {% for metric_name, metric_value in quality_metrics.items %}
+        <tr>
+            <td>{{ metric_name }}</td>
+            <td>{{ metric_value }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+    <p>Метрики также доступны в формате Prometheus по адресу: <code>/metrics/</code></p>
+</div>
+
+<div class="card">
+    <h2>Графики</h2>
+
+    <p><strong>Количество решений контейнера</strong></p>
+    <img src="{% static 'management_panel/chart_decisions.png' %}?v={{ chart_version }}" alt="График решений">
+
+    <p><strong>Доступность системы по шагам</strong></p>
+    <img src="{% static 'management_panel/chart_availability.png' %}?v={{ chart_version }}" alt="График доступности">
+
+    <p><strong>Изменение лимитов ресурсов</strong></p>
+    <img src="{% static 'management_panel/chart_resources.png' %}?v={{ chart_version }}" alt="График ресурсов">
+</div>
+
+</body>
+</html>
